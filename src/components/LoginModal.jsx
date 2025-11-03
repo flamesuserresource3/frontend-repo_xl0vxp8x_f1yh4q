@@ -1,16 +1,20 @@
 import React from 'react';
 
-export default function LoginModal({ open, onClose, presetModule }) {
+export default function LoginModal({ open, onClose, presetModule, onSuccess }) {
   const [mode, setMode] = React.useState('login'); // 'login' | 'register'
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [name, setName] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState('');
+  const [error, setError] = React.useState('');
+
+  const baseUrl = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || '';
 
   React.useEffect(() => {
     if (!open) return;
     setMessage('');
+    setError('');
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
     };
@@ -20,15 +24,56 @@ export default function LoginModal({ open, onClose, presetModule }) {
 
   if (!open) return null;
 
+  const persistSession = (user, token) => {
+    try {
+      localStorage.setItem('getteng_token', token);
+      localStorage.setItem('getteng_user', JSON.stringify(user));
+    } catch {}
+  };
+
+  const doLogin = async (emailArg, passwordArg) => {
+    const res = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailArg, password: passwordArg }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data?.detail || data?.message || 'Gagal login');
+    }
+    persistSession(data.user, data.token);
+    setMessage('Login berhasil!');
+    onSuccess?.(data.user, data.token, presetModule || null);
+    onClose();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    // Simulate a quick client-side success (no backend wiring per request)
-    setTimeout(() => {
+    setError('');
+    try {
+      if (!baseUrl) throw new Error('Konfigurasi backend belum diset (VITE_BACKEND_URL)');
+      if (mode === 'register') {
+        const res = await fetch(`${baseUrl}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data?.detail || data?.message || 'Registrasi gagal');
+        }
+        // Auto-login after successful registration
+        await doLogin(email, password);
+      } else {
+        await doLogin(email, password);
+      }
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan');
+    } finally {
       setLoading(false);
-      setMessage('Berhasil! Akun Anda siap. Anda dapat melanjutkan.');
-    }, 600);
+    }
   };
 
   return (
@@ -82,6 +127,11 @@ export default function LoginModal({ open, onClose, presetModule }) {
           {message && (
             <div className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md px-3 py-2">
               {message}
+            </div>
+          )}
+          {error && (
+            <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
+              {error}
             </div>
           )}
           <button
