@@ -1,15 +1,19 @@
 import React from 'react';
+import { Eye, EyeOff, Mail, Lock, User as UserIcon, Chrome } from 'lucide-react';
 
 export default function LoginModal({ open, onClose, presetModule, onSuccess }) {
   const [mode, setMode] = React.useState('login'); // 'login' | 'register'
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [name, setName] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState('');
+  const [googleLoading, setGoogleLoading] = React.useState(false);
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '') || '';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
   React.useEffect(() => {
     if (!open) return;
@@ -76,6 +80,73 @@ export default function LoginModal({ open, onClose, presetModule, onSuccess }) {
     }
   };
 
+  const ensureGoogleLib = () => {
+    return new Promise((resolve, reject) => {
+      if (window.google && window.google.accounts && window.google.accounts.id) return resolve();
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Gagal memuat Google Identity Services'));
+      document.head.appendChild(script);
+    });
+  };
+
+  const handleGoogleCredential = async (credential) => {
+    try {
+      if (!baseUrl) throw new Error('Konfigurasi backend belum diset (VITE_BACKEND_URL)');
+      const res = await fetch(`${baseUrl}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: credential }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data?.detail || data?.message || 'Login Google gagal');
+      }
+      persistSession(data.user, data.token);
+      setMessage('Login Google berhasil!');
+      onSuccess?.(data.user, data.token, presetModule || null);
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan saat login Google');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const onGoogleClick = async () => {
+    setError('');
+    setMessage('');
+    setGoogleLoading(true);
+    try {
+      if (!googleClientId) throw new Error('Google Client ID belum diset (VITE_GOOGLE_CLIENT_ID)');
+      await ensureGoogleLib();
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: (resp) => {
+          if (resp && resp.credential) {
+            handleGoogleCredential(resp.credential);
+          } else {
+            setGoogleLoading(false);
+            setError('Tidak menerima kredensial Google');
+          }
+        },
+      });
+      // Show Google One Tap / prompt
+      window.google.accounts.id.prompt((notification) => {
+        // If One Tap is not displayed, fallback to a popup "select_account"
+        if (notification && notification.isNotDisplayed()) {
+          window.google.accounts.id.prompt();
+        }
+      });
+    } catch (err) {
+      setGoogleLoading(false);
+      setError(err.message || 'Gagal memulai login Google');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -91,38 +162,72 @@ export default function LoginModal({ open, onClose, presetModule, onSuccess }) {
           ) : null}
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+        <div className="mt-4 grid gap-3">
+          <button
+            type="button"
+            onClick={onGoogleClick}
+            disabled={googleClientId === '' || googleLoading}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-60 transition"
+          >
+            <Chrome size={18} />
+            {googleLoading ? 'Menghubungkan…' : 'Lanjutkan dengan Google'}
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+            <span className="text-xs text-neutral-500">atau</span>
+            <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-3 space-y-3">
           {mode === 'register' && (
             <div>
               <label className="block text-sm mb-1 text-neutral-700 dark:text-neutral-300">Nama</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-neutral-400"><UserIcon size={16} /></span>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full pl-9 pr-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
             </div>
           )}
           <div>
             <label className="block text-sm mb-1 text-neutral-700 dark:text-neutral-300">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-neutral-400"><Mail size={16} /></span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full pl-9 pr-10 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm mb-1 text-neutral-700 dark:text-neutral-300">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-neutral-400"><Lock size={16} /></span>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-9 pr-10 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-2 top-1.5 p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           {message && (
             <div className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md px-3 py-2">
