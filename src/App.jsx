@@ -1,58 +1,51 @@
-import { useRef, useState } from "react";
-import Hero from "./components/Hero";
-import CourseTeasers from "./components/CourseTeasers";
-import LandingSection from "./components/LandingSection";
-import LoginModal from "./components/LoginModal";
+import { useState } from "react";
+import Header from "./components/Header.jsx";
+import ModuleGrid from "./components/ModuleGrid.jsx";
+import ModuleDetail from "./components/ModuleDetail.jsx";
+import Footer from "./components/Footer.jsx";
+import LoginModal from "./components/LoginModal.jsx";
+
+function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 to-slate-900">
+      <div className="mx-auto max-w-6xl px-4 py-16">
+        <div className="max-w-2xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Kuasai skill teknologi lewat modul interaktif
+          </h1>
+          <p className="mt-3 text-slate-400">
+            Pilih topik, pelajari kurikulum singkatnya, dan mulai belajar. Jika tertarik, daftar dan lanjutkan course.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function App() {
-  const [showLogin, setShowLogin] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const landingRef = useRef(null);
-
-  const goToLanding = () => {
-    landingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-950 font-inter text-white">
-      <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-indigo-600" />
-            <span className="text-lg font-semibold">Getteng Apps</span>
-          </div>
-          <nav className="hidden gap-6 text-sm text-slate-300 sm:flex">
-            <a href="#highlights" className="hover:text-white">Katalog</a>
-            <a href="#landing" className="hover:text-white">Landing</a>
-          </nav>
-          <button
-            onClick={() => setShowLogin(true)}
-            className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700"
-          >
-            Masuk
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <Header onLogin={() => setLoginOpen(true)} />
+      <Hero />
 
-      <main>
-        <Hero onGetStarted={() => { goToLanding(); setShowLogin(true); }} />
-        <CourseTeasers
-          onModuleClick={(course, module) => {
-            setSelected({ course, module });
-            goToLanding();
-            setShowLogin(true);
-          }}
+      {!selectedModule && (
+        <ModuleGrid onSelect={(m) => setSelectedModule(m)} />
+      )}
+
+      {selectedModule && (
+        <ModuleDetail
+          module={selectedModule}
+          onBack={() => setSelectedModule(null)}
+          onJoin={() => setLoginOpen(true)}
         />
-        <LandingSection ref={landingRef} selected={selected} />
-      </main>
+      )}
 
-      <footer className="border-t border-slate-800 bg-slate-950 py-8">
-        <div className="mx-auto max-w-6xl px-6 text-sm text-slate-400">
-          © {new Date().getFullYear()} Getteng Apps • Bangun skill, tunjukkan karya.
-        </div>
-      </footer>
+      <Footer />
 
-      <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </div>
   );
 }
