@@ -1,95 +1,61 @@
-import { Brain, Globe, Cpu, Layers, ArrowRight } from "lucide-react";
+import React from 'react';
+import { Brain, Globe, Database, Cog } from 'lucide-react';
 
-const MODULES = [
+const modules = [
   {
-    id: "ai",
-    title: "Artificial Intelligence",
-    short: "Belajar dasar AI, machine learning, dan praktik modern.",
-    level: "Pemula – Menengah",
+    id: 'ai',
+    title: 'Kecerdasan Buatan',
+    description: 'Dasar machine learning, neural network, dan praktik cepat.',
     icon: Brain,
-    color: "from-indigo-500 to-violet-500",
-    highlights: [
-      "Python untuk ML",
-      "Linear/Logistic Regression",
-      "Neural Networks dasar",
-      "Project: Image Classifier",
-    ],
+    color: 'from-pink-500 to-rose-500',
   },
   {
-    id: "web",
-    title: "Web Development",
-    short: "Bangun website modern dengan React, API, dan deployment.",
-    level: "Pemula – Menengah",
+    id: 'web',
+    title: 'Pengembangan Web',
+    description: 'Frontend modern, API, dan best practices responsif.',
     icon: Globe,
-    color: "from-blue-500 to-cyan-500",
-    highlights: [
-      "HTML/CSS/JS",
-      "React dasar – lanjutan",
-      "REST API & Auth",
-      "Project: Portfolio App",
-    ],
+    color: 'from-indigo-500 to-blue-500',
   },
   {
-    id: "ds",
-    title: "Data Science",
-    short: "Eksplorasi data, visualisasi, dan pemodelan statistik.",
-    level: "Menengah",
-    icon: Layers,
-    color: "from-emerald-500 to-teal-500",
-    highlights: [
-      "Pandas & NumPy",
-      "Data wrangling",
-      "Visualisasi dengan Seaborn",
-      "Project: Retail Insights",
-    ],
+    id: 'data',
+    title: 'Data Science',
+    description: 'Pandas, visualisasi, dan pembelajaran statistik.',
+    icon: Database,
+    color: 'from-emerald-500 to-teal-500',
   },
   {
-    id: "systems",
-    title: "Computer Systems",
-    short: "Pahami arsitektur, OS, dan jaringan untuk fondasi kuat.",
-    level: "Pemula",
-    icon: Cpu,
-    color: "from-rose-500 to-orange-500",
-    highlights: [
-      "CPU & Memory",
-      "Operating Systems",
-      "Networking dasar",
-      "Project: Mini Shell",
-    ],
+    id: 'systems',
+    title: 'Sistem & DevOps',
+    description: 'Dasar Linux, container, CI/CD, dan observabilitas.',
+    icon: Cog,
+    color: 'from-amber-500 to-orange-500',
   },
 ];
 
-export default function ModuleGrid({ onSelect }) {
+export default function ModuleGrid({ onJoin }) {
   return (
-    <section id="modules" className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-6 flex items-end justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-white">Pilih Modul</h2>
-          <p className="text-sm text-slate-400">Klik modul untuk melihat detail dan kurikulum singkat.</p>
-        </div>
-      </div>
-
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {MODULES.map((m) => (
-          <button
+    <section className="mx-auto max-w-6xl px-4 py-12">
+      <h2 className="text-2xl font-semibold tracking-tight mb-6">Pilih Modul</h2>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {modules.map((m) => (
+          <article
             key={m.id}
-            onClick={() => onSelect(m)}
-            className="group rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-left transition hover:border-slate-700 hover:bg-slate-900/90"
+            className="group rounded-xl border border-neutral-200/70 dark:border-neutral-800/70 bg-white dark:bg-neutral-900 p-5 shadow-sm hover:shadow-md transition-shadow"
           >
-            <div className={`inline-flex items-center justify-center rounded-xl bg-gradient-to-r ${m.color} p-3`}> 
-              <m.icon className="h-6 w-6 text-white" />
+            <div className={`h-12 w-12 rounded-lg bg-gradient-to-br ${m.color} text-white flex items-center justify-center mb-4 shadow`}> 
+              <m.icon size={22} />
             </div>
-            <h3 className="mt-3 text-lg font-semibold text-white">{m.title}</h3>
-            <p className="mt-1 text-sm text-slate-400">{m.short}</p>
-            <div className="mt-3 text-xs text-slate-400">Level: {m.level}</div>
-            <div className="mt-4 inline-flex items-center gap-2 text-indigo-300">
-              Lihat detail <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </div>
-          </button>
+            <h3 className="font-semibold mb-1">{m.title}</h3>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">{m.description}</p>
+            <button
+              onClick={() => onJoin(m)}
+              className="w-full inline-flex items-center justify-center rounded-md bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-3 py-2 text-sm font-medium hover:opacity-90 transition"
+            >
+              Ikuti Course
+            </button>
+          </article>
         ))}
       </div>
     </section>
   );
 }
-
-export { MODULES };

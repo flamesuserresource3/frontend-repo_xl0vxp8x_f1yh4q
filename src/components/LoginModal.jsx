@@ -1,80 +1,67 @@
-import { useEffect, useState } from "react";
-import { X, User } from "lucide-react";
+import React, { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 
-export default function LoginModal({ open, onClose }) {
-  const [mode, setMode] = useState("login"); // 'login' | 'register'
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+export default function LoginModal({ open, onClose, onSuccess, presetModule }) {
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const dialogRef = useRef(null);
+
+  const backend = import.meta.env.VITE_BACKEND_URL || '';
 
   useEffect(() => {
-    const handler = (e) => e.key === "Escape" && onClose();
-    if (open) window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    function onKey(e) {
+      if (e.key === 'Escape') onClose?.();
+    }
+    if (open) {
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
   }, [open, onClose]);
 
   useEffect(() => {
-    if (open) {
-      setError("");
-      setSuccess("");
+    if (!open) {
+      setError('');
+      setInfo('');
       setLoading(false);
     }
   }, [open]);
 
-  if (!open) return null;
-
-  const fallbackFromOrigin = () => {
-    try {
-      const url = new URL(window.location.href);
-      const host = url.hostname;
-      // If running on port 3000 locally, switch to 8000, otherwise keep host and port if present
-      const port = url.port === "3000" ? "8000" : (url.port || "");
-      return `${url.protocol}//${host}${port ? `:${port}` : ""}`.replace("3000", "8000");
-    } catch {
-      return "";
-    }
-  };
-
-  const baseURL = (import.meta.env.VITE_BACKEND_URL || fallbackFromOrigin()).replace(/\/$/, "");
-
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setInfo('');
 
     try {
-      const endpoint = mode === "login" ? "/auth/login" : "/auth/register";
-      const body = mode === "login"
-        ? { email, password }
-        : { name, email, password };
+      const url = mode === 'login' ? `${backend}/auth/login` : `${backend}/auth/register`;
+      const payload = mode === 'login' ? { email, password } : { name, email, password };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-      const res = await fetch(`${baseURL}${endpoint}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        }
-      );
-
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.detail || "Terjadi kesalahan. Coba lagi.");
+        throw new Error(data?.detail || 'Terjadi kesalahan. Coba lagi.');
       }
 
-      if (mode === "register") {
-        setSuccess("Registrasi berhasil. Silakan masuk.");
-        setMode("login");
-      } else {
-        setSuccess("Login berhasil. Selamat belajar!");
-        // In a real app, you'd persist token/user here
-        setTimeout(() => {
-          onClose();
-        }, 700);
+      setInfo(mode === 'login' ? 'Berhasil masuk.' : 'Akun dibuat. Berhasil masuk.');
+
+      // Optionally persist token if provided
+      if (data?.token) {
+        localStorage.setItem('token', data.token);
       }
+
+      setTimeout(() => {
+        onSuccess?.(data, presetModule);
+        onClose?.();
+      }, 600);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -82,90 +69,116 @@ export default function LoginModal({ open, onClose }) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-2xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-indigo-400" />
-            <h3 className="text-lg font-semibold">
-              {mode === "login" ? "Masuk untuk Mulai Belajar" : "Daftar Akun Baru"}
-            </h3>
-          </div>
-          <button
-            aria-label="Tutup"
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
-            onClick={onClose}
-            disabled={loading}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+  if (!open) return null;
 
-        <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-          {mode === "register" && (
-            <div>
-              <label className="text-sm text-slate-300">Nama Lengkap</label>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div
+        ref={dialogRef}
+        className="relative mx-4 w-full max-w-md rounded-2xl bg-white dark:bg-neutral-900 p-6 shadow-2xl border border-neutral-200/70 dark:border-neutral-800/70"
+        role="dialog"
+        aria-modal="true"
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 p-2 rounded-md text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+          aria-label="Tutup"
+        >
+          <X size={18} />
+        </button>
+
+        <h3 className="text-lg font-semibold mb-1">
+          {mode === 'login' ? 'Masuk' : 'Daftar Akun'}
+        </h3>
+        {presetModule ? (
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            Anda bergabung ke modul <span className="font-medium">{presetModule.title}</span> setelah berhasil {mode === 'login' ? 'masuk' : 'mendaftar'}.
+          </p>
+        ) : (
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            Lanjutkan untuk mengakses materi dan bergabung ke course.
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {mode === 'register' && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Nama</label>
               <input
                 type="text"
-                required
-                placeholder="Nama Anda"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Nama lengkap"
+                required
               />
             </div>
           )}
-          <div>
-            <label className="text-sm text-slate-300">Email</label>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Email</label>
             <input
               type="email"
-              required
-              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="nama@contoh.com"
+              required
             />
           </div>
-          <div>
-            <label className="text-sm text-slate-300">Kata Sandi</label>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Kata sandi</label>
             <input
               type="password"
-              required
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="••••••••"
+              required
+              minLength={6}
             />
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-              {error}
-            </div>
+            <p className="text-sm text-red-600">{error}</p>
           )}
-          {success && (
-            <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-              {success}
-            </div>
+          {info && (
+            <p className="text-sm text-emerald-600">{info}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-60"
+            className="w-full rounded-md bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 font-medium transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? "Memproses..." : mode === "login" ? "Masuk & Mulai" : "Daftar & Mulai"}
+            {loading ? 'Memproses…' : mode === 'login' ? 'Masuk' : 'Daftar'}
           </button>
-
-          <p className="text-center text-sm text-slate-400">
-            {mode === "login" ? (
-              <>Belum punya akun? <button type="button" className="text-indigo-300 underline-offset-2 hover:underline" onClick={() => setMode("register")}>Daftar gratis</button></>
-            ) : (
-              <>Sudah punya akun? <button type="button" className="text-indigo-300 underline-offset-2 hover:underline" onClick={() => setMode("login")}>Masuk di sini</button></>
-            )}
-          </p>
         </form>
+
+        <div className="mt-4 text-sm text-center text-neutral-600 dark:text-neutral-400">
+          {mode === 'login' ? (
+            <span>
+              Belum punya akun?{' '}
+              <button onClick={() => setMode('register')} className="text-indigo-600 hover:underline font-medium">
+                Daftar
+              </button>
+            </span>
+          ) : (
+            <span>
+              Sudah punya akun?{' '}
+              <button onClick={() => setMode('login')} className="text-indigo-600 hover:underline font-medium">
+                Masuk
+              </button>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
