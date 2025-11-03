@@ -1,28 +1,35 @@
 import React from 'react';
-import { GraduationCap, LogIn } from 'lucide-react';
+import { Rocket, User } from 'lucide-react';
 
-export default function Header({ onLogin }) {
+export default function Header({ onLogin, onCTAClick }) {
   return (
-    <header className="sticky top-0 z-20 backdrop-blur bg-white/70 dark:bg-neutral-900/70 border-b border-neutral-200/60 dark:border-neutral-800/60">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center text-white">
-            <GraduationCap size={20} />
+    <header className="sticky top-0 z-50 w-full backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/50 dark:bg-neutral-900/50 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-md bg-gradient-to-tr from-orange-500 to-amber-400 text-white">
+              <Rocket size={18} />
+            </div>
+            <span className="font-semibold text-neutral-800 dark:text-neutral-100 tracking-tight">Getteng Apps</span>
           </div>
-          <div>
-            <p className="text-lg font-semibold tracking-tight">Belajar Interaktif</p>
-            <p className="text-xs text-neutral-500">Modul AI • Web • Data • Sistem</p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onCTAClick}
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition"
+            >
+              Daftar Gratis
+            </button>
+            <button
+              type="button"
+              onClick={onLogin}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+            >
+              <User size={16} />
+              Masuk
+            </button>
           </div>
         </div>
-
-        <button
-          onClick={onLogin}
-          className="inline-flex items-center gap-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium shadow-sm transition-colors"
-          aria-label="Masuk"
-        >
-          <LogIn size={16} />
-          Masuk
-        </button>
       </div>
     </header>
   );
