@@ -1,61 +1,58 @@
-import React from 'react';
-import { Rocket, User } from 'lucide-react';
-import Courses from './components/Courses';
-import StudyTracker from './components/StudyTracker';
-import PomodoroTimer from './components/PomodoroTimer';
-import CodeNotes from './components/CodeNotes';
+import { useRef, useState } from "react";
+import Hero from "./components/Hero";
+import CourseTeasers from "./components/CourseTeasers";
+import LandingSection from "./components/LandingSection";
+import LoginModal from "./components/LoginModal";
 
 export default function App() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const landingRef = useRef(null);
+
+  const goToLanding = () => {
+    landingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 text-gray-900">
-      {/* Header / Hero */}
-      <header className="relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 py-14">
-          <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-                <Rocket className="h-4 w-4" /> Getteng Apps
-              </div>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Belajar interaktif ala Cognitive Class.
-              </h1>
-              <p className="mt-2 max-w-2xl text-base text-gray-600">
-                Ikuti course realtime, modul ajar lengkap (RPL, Algoritma, OOP, Web, AI, Database), kerjakan 3–4 proyek,
-                dan raih sertifikat. Pantau progres dengan Study Tracker, fokus dengan Pomodoro, dan simpan catatan kode.
-              </p>
-              <div className="mt-4 flex gap-3">
-                <a href="#courses" className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700">Jelajahi Course</a>
-                <a href="#tracker" className="rounded-lg border px-4 py-2 font-medium hover:bg-gray-50">Lihat Progres</a>
-              </div>
-            </div>
-            <div className="w-full max-w-md self-stretch rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <User className="h-4 w-4 text-indigo-600" /> Akun & Sertifikasi
-              </div>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>• Masuk untuk mengikuti course dan menyelesaikan proyek.</li>
-                <li>• Selesaikan semua proyek untuk membuka sertifikat.</li>
-                <li>• Simpan catatan kode untuk semua bahasa pemrograman.</li>
-              </ul>
-            </div>
+    <div className="min-h-screen bg-slate-950 font-inter text-white">
+      <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-indigo-600" />
+            <span className="text-lg font-semibold">Getteng Apps</span>
           </div>
+          <nav className="hidden gap-6 text-sm text-slate-300 sm:flex">
+            <a href="#highlights" className="hover:text-white">Katalog</a>
+            <a href="#landing" className="hover:text-white">Landing</a>
+          </nav>
+          <button
+            onClick={() => setShowLogin(true)}
+            className="rounded-lg bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700"
+          >
+            Masuk
+          </button>
         </div>
       </header>
 
-      {/* Sections */}
       <main>
-        <Courses />
-        <StudyTracker />
-        <PomodoroTimer />
-        <CodeNotes />
+        <Hero onGetStarted={() => { goToLanding(); setShowLogin(true); }} />
+        <CourseTeasers
+          onModuleClick={(course, module) => {
+            setSelected({ course, module });
+            goToLanding();
+            setShowLogin(true);
+          }}
+        />
+        <LandingSection ref={landingRef} selected={selected} />
       </main>
 
-      {/* Footer */}
-      <footer className="mt-10 border-t bg-white/60">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-gray-600">
-          © {new Date().getFullYear()} Getteng Apps — Belajar cerdas, karier melesat.
+      <footer className="border-t border-slate-800 bg-slate-950 py-8">
+        <div className="mx-auto max-w-6xl px-6 text-sm text-slate-400">
+          © {new Date().getFullYear()} Getteng Apps • Bangun skill, tunjukkan karya.
         </div>
       </footer>
+
+      <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
     </div>
   );
 }
