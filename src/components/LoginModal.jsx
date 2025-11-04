@@ -1,7 +1,7 @@
 import React from 'react';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Chrome } from 'lucide-react';
 
-export default function LoginModal({ open, onClose, presetModule, onSuccess }) {
+export default function LoginModal({ open, onClose, presetModule, onSuccess, onForgot }) {
   const [mode, setMode] = React.useState('login'); // 'login' | 'register'
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -209,7 +209,14 @@ export default function LoginModal({ open, onClose, presetModule, onSuccess }) {
             </div>
           </div>
           <div>
-            <label className="block text-sm mb-1 text-neutral-700 dark:text-neutral-300">Password</label>
+            <div className="flex items-center justify-between">
+              <label className="block text-sm mb-1 text-neutral-700 dark:text-neutral-300">Password</label>
+              {mode === 'login' && (
+                <button type="button" onClick={() => onForgot?.()} className="text-xs text-orange-600 hover:underline">
+                  Lupa kata sandi?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-neutral-400"><Lock size={16} /></span>
               <input

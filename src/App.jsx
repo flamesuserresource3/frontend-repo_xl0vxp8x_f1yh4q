@@ -4,6 +4,8 @@ import HeroCover from './components/HeroCover.jsx';
 import LandingContent from './components/LandingContent.jsx';
 import LoginModal from './components/LoginModal.jsx';
 import ModuleDetail from './components/ModuleDetail.jsx';
+import ForgotPasswordModal from './components/ForgotPasswordModal.jsx';
+import ResetPasswordModal from './components/ResetPasswordModal.jsx';
 
 // Minimal in-app router using History API so we don't need extra deps
 function parseRoute(pathname) {
@@ -71,6 +73,12 @@ export default function App() {
   const [presetModule, setPresetModule] = React.useState(null);
   const [user, setUser] = React.useState(null);
   const [route, setRoute] = React.useState(() => parseRoute(window.location.pathname));
+
+  // Forgot / Reset password modals state
+  const [forgotOpen, setForgotOpen] = React.useState(false);
+  const [resetOpen, setResetOpen] = React.useState(false);
+  const [resetEmail, setResetEmail] = React.useState('');
+  const [resetToken, setResetToken] = React.useState('');
 
   React.useEffect(() => {
     try {
@@ -160,6 +168,29 @@ export default function App() {
         onClose={() => setLoginOpen(false)}
         presetModule={presetModule}
         onSuccess={(u) => handleAuthSuccess(u)}
+        onForgot={() => { setLoginOpen(false); setForgotOpen(true); }}
+      />
+
+      <ForgotPasswordModal
+        open={forgotOpen}
+        onClose={() => setForgotOpen(false)}
+        onProceedReset={(email, token) => {
+          setForgotOpen(false);
+          setResetEmail(email);
+          setResetToken(token || '');
+          setResetOpen(true);
+        }}
+      />
+
+      <ResetPasswordModal
+        open={resetOpen}
+        initialEmail={resetEmail}
+        initialToken={resetToken}
+        onClose={() => setResetOpen(false)}
+        onDone={() => {
+          setResetOpen(false);
+          setLoginOpen(true);
+        }}
       />
 
       <footer className="border-t border-neutral-200 dark:border-neutral-800 py-8 text-center text-sm text-neutral-500">
