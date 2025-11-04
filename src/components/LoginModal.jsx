@@ -134,10 +134,10 @@ export default function LoginModal({ open, onClose, presetModule, onSuccess, onF
           }
         },
       });
-      // Show Google One Tap / prompt
+      // Prefer a popup to ensure the user can continue even if One Tap is blocked
       window.google.accounts.id.prompt((notification) => {
-        // If One Tap is not displayed, fallback to a popup "select_account"
         if (notification && notification.isNotDisplayed()) {
+          // fallback: render a popup selector
           window.google.accounts.id.prompt();
         }
       });
@@ -149,6 +149,7 @@ export default function LoginModal({ open, onClose, presetModule, onSuccess, onF
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
+      {/* Backdrop must allow clicking the modal content */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative w-full max-w-md mx-auto rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl p-6">
         <div className="flex items-center justify-between">
@@ -166,12 +167,15 @@ export default function LoginModal({ open, onClose, presetModule, onSuccess, onF
           <button
             type="button"
             onClick={onGoogleClick}
-            disabled={googleClientId === '' || googleLoading}
+            disabled={googleLoading}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-60 transition"
           >
             <Chrome size={18} />
             {googleLoading ? 'Menghubungkan…' : 'Lanjutkan dengan Google'}
           </button>
+          {!googleClientId && (
+            <p className="text-xs text-orange-600">Setel VITE_GOOGLE_CLIENT_ID agar login Google berfungsi.</p>
+          )}
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
             <span className="text-xs text-neutral-500">atau</span>
